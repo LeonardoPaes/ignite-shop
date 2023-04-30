@@ -1,4 +1,4 @@
-import { HomeContainer, Product } from "@/styles/pages/home"
+import { ArrowButton, HomeContainer, Product } from "@/styles/pages/home"
 import Image from "next/image"
 import Head from "next/head"
 import { KeenSliderInstance, useKeenSlider } from 'keen-slider/react'
@@ -9,6 +9,7 @@ import { stripe } from "@/lib/stripe"
 import { GetStaticProps } from "next"
 import Stripe from "stripe"
 import Link from "next/link"
+import { CaretLeft, CaretRight, ShoppingBag } from "phosphor-react"
 
 interface HomeProps {
   products: {
@@ -23,18 +24,18 @@ export default function Home({ products }: HomeProps) {
   // const [localSlide, setLocalSlide] = useState<KeenSliderInstance>()
   const [slideIndex, setSlideIndex] = useState(0)
 
-  const [sliderRef] = useKeenSlider({
+  const [sliderRef, instanceRef] = useKeenSlider({
     mode: "free-snap",
     initial: 0,
     slides: () => products.map((product, index) => {
       let origin
       switch (index) {
         case 0:
-          origin = 0
+          origin = 0.1
           break;
         
         case (products.length - 1):
-          origin = 0.5
+          origin = 0.4
           break;
 
         default:
@@ -51,13 +52,24 @@ export default function Home({ products }: HomeProps) {
       setSlideIndex(slider.track.details.rel)
     },
   })
+
+  function handleChangeSlide(direction: "left" | "right") {
+    if (direction === "right") {
+      instanceRef.current?.next()
+    }else{
+      instanceRef.current?.prev()
+    }
+  }
+
   return (
     <>
       <Head>
         <title>Home | Ignite Shop</title>
       </Head>
-      
       <HomeContainer ref={sliderRef} className="keen-slider" css={{$$child: '2'}}>
+        <ArrowButton direction={"left"} disabled={slideIndex === 0} onClick={() => {handleChangeSlide("left")}}>
+          <CaretLeft size={48} />
+        </ArrowButton>
         {products.map((product, index) => {
           return (
             <Link href={`/product/${product.id}`} key={product.id} prefetch={false}>
@@ -65,13 +77,21 @@ export default function Home({ products }: HomeProps) {
                 <Image src={product.imageUrl} width={520} height={480} alt="" />
 
                 <footer>
-                  <strong>{product.name}</strong>
-                  <span>{product.price}</span>
+                  <div>
+                    <strong>{product.name}</strong>
+                    <span>{product.price}</span>
+                  </div>
+                  <button>
+                    <ShoppingBag size={24} />
+                  </button>
                 </footer>
               </Product>
             </Link>
           )
         })}
+        <ArrowButton direction={"right"} disabled={slideIndex === (products.length - 1)}  onClick={() => {handleChangeSlide("right")}}>
+          <CaretRight size={48} />
+        </ArrowButton>
       </HomeContainer>
     </>
   )
