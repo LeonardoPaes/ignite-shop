@@ -82,6 +82,12 @@ export const Product = styled('div', {
             padding: '0.75rem',
             borderRadius: 6,
             lineHeight: 0,
+            cursor: 'pointer',
+            transition: 'background 0.3s',
+
+            '&:hover': { 
+                backgroundColor: '$green300',
+            }
         }
     },
 

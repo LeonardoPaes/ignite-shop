@@ -8,20 +8,28 @@ import { useState } from "react"
 import { stripe } from "@/lib/stripe"
 import { GetStaticProps } from "next"
 import Stripe from "stripe"
-import Link from "next/link"
+// import Link from "next/link"
 import { CaretLeft, CaretRight, ShoppingBag } from "phosphor-react"
+import { useContextSelector } from "use-context-selector"
+import { CartContext } from "@/contexts/CartContext"
+import { useRouter } from "next/router"
 
 interface HomeProps {
   products: {
     id: string
     name: string
     imageUrl: string
-    price: string
+    price: number
+    defaultPriceId: string
   }[]
 }
 
 export default function Home({ products }: HomeProps) {
   // const [localSlide, setLocalSlide] = useState<KeenSliderInstance>()
+  const router = useRouter();
+  const addToCart = useContextSelector(CartContext, (context) => {
+    return context.addToCart
+  })
   const [slideIndex, setSlideIndex] = useState(0)
 
   const [sliderRef, instanceRef] = useKeenSlider({
@@ -72,21 +80,30 @@ export default function Home({ products }: HomeProps) {
         </ArrowButton>
         {products.map((product, index) => {
           return (
-            <Link href={`/product/${product.id}`} key={product.id} prefetch={false}>
-              <Product className={slideIndex === index ? "keen-slider__slide active" : "keen-slider__slide"}>
+            // <Link href={`/product/${product.id}`} key={product.id} prefetch={false}>
+              <Product key={product.id} className={slideIndex === index ? "keen-slider__slide active" : "keen-slider__slide"} 
+              onClick={() => {
+                router.push(`/product/${product.id}`)
+              }}>
                 <Image src={product.imageUrl} width={520} height={480} alt="" />
 
                 <footer>
                   <div>
                     <strong>{product.name}</strong>
-                    <span>{product.price}</span>
+                    <span>{new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(product.price / 100)}</span>
                   </div>
-                  <button>
+                  <button onClick={(event) => {
+                      event.stopPropagation()
+                      addToCart({...product, quantity: 1})
+                    }}>
                     <ShoppingBag size={24} />
                   </button>
                 </footer>
               </Product>
-            </Link>
+            // </Link>
           )
         })}
         <ArrowButton direction={"right"} disabled={slideIndex === (products.length - 1)}  onClick={() => {handleChangeSlide("right")}}>
@@ -108,10 +125,8 @@ export const getStaticProps: GetStaticProps = async () => {
       id: product.id,
       name: product.name,
       imageUrl: product.images[0],
-      price: new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      }).format(price.unit_amount! / 100),
+      price: Number(price.unit_amount),
+      defaultPriceId: price.id,
     }
   })
 
